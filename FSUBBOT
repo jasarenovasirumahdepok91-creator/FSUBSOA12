@@ -1,0 +1,47 @@
+import os
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+# Konfigurasi
+BOT_TOKEN = "8377840051:AAGqJ5A65NRcVoL7czjWIl6LqxJgk1_nRRo"  # Token bot
+API_ID = 28033666
+API_HASH = "07d579c6f0dbbc1b5adb14b3acf68aed"
+CHANNEL_USERNAME = "OFCSONOFANARCHY"  # tanpa @
+
+app = Client("forcesub_bot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
+
+def check_member(client, user_id):
+    try:
+        member = client.get_chat_member(f"@{CHANNEL_USERNAME}", user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except Exception:
+        return False
+
+@app.on_message(filters.group & ~filters.service)
+def forcesub_handler(client, message):
+    user_id = message.from_user.id
+    chat_id = message.chat.id
+
+    if not check_member(client, user_id):
+        text = (
+            f"⚠️ Hai, @{message.from_user.username or message.from_user.first_name}!\n"
+            "Untuk mengirim pesan di grup ini, kamu harus join channel wajib:\n"
+            f"👉 @{CHANNEL_USERNAME}\n\n"
+            "Setelah bergabung, klik tombol di bawah ini:"
+        )
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Cek & Unmute Pesan", callback_data="cek_unmute")]
+        ])
+        message.reply(text, reply_markup=keyboard)
+        message.delete()  # hapus pesan user agar tidak tampil
+
+@app.on_callback_query(filters.regex("cek_unmute"))
+def check_unmute(client, callback_query):
+    user_id = callback_query.from_user.id
+
+    if check_member(client, user_id):
+        callback_query.answer("✅ Akses terbuka! Silakan kirim pesan.")
+    else:
+        callback_query.answer("🚫 Kamu belum join channel wajib!", show_alert=True)
+
+app.run()
